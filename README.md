@@ -175,3 +175,5 @@ Files sizes:
  51M: reading.sensor.t7610.pkl
  31M: reading.sensor.windobserverii.pkl
 ```
+## Exploratory Data Analysis of the data:
+After generating all the files for the burn event, the user can utilize the notebook [exploratory-data-analysis.ipynb](burn-event/exploratory-data-analysis.ipynb) to start using the data.
