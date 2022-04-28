@@ -80,6 +80,25 @@ Files provided for the burn event:
 
 For each file, refer to the Algorithm Theoretical Basis Document ATBD for each variable on [NEONs Data portal](https://data.neonscience.org/data-products/explore) to convert the raw data to useable data. For example, `reading.sensor.windobserverii` corresponds to [2D Wind Speed and direction](https://data.neonscience.org/data-products/DP1.00001.001/RELEASE-2021) with the following [ATBD document](https://data.neonscience.org/api/v0/documents/NEON.DOC.000780vB)
 
+## Neon Kafka Data Exporter - plugin
+### Docker
+Docker build:
+```
+docker build -t sagecontinuum/plugin-neon-kafka-exporter .
+```
+Docker run:
+```
+docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --topic reading.sensor.mti300ahrs
+```
+### Kubernetes
+Create secrets from .env:
+```
+kubectl create secret generic neon-env --from-env-file=.env
+```
+Deploy app:
+```
+kubectl create -f deployment.yaml
+```
 
 ## Neon Kafka Data exporter for the burn event
 Neon and Sage collected data for a controlled fire. In the directory [burn-event](burn-event) contains the scripts to get the streaming data into a pickle file. Note that the scripts must be ran on the WSN node and have access to the Kafka and schema registry endpoint.
