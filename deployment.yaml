@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: plugin-neon-kafka-data-exporter
+  name: plugin-neon-kafka-exporter
   labels:
-    k8s-app: plugin-neon-kafka-data-exporter
+    k8s-app: plugin-neon-kafka-exporter
 spec:
   replicas: 1
   selector:
     matchLabels:
-      k8s-app: plugin-neon-kafka-data-exporter
+      k8s-app: plugin-neon-kafka-exporter
   template:
     metadata:
       labels:
-        k8s-app: plugin-neon-kafka-data-exporter
+        k8s-app: plugin-neon-kafka-exporter
     spec:
       containers:
-      - name: plugin-neon-kafka-data-exporter
-        image: registry.sagecontinuum.org/iperezx/neon-kafka-data-exporter:0.1.0
-        args: [""--topic","reading.sensor.mti300ahrs"]
+      - name: plugin-neon-kafka-exporter
+        image: registry.sagecontinuum.org/iperezx/neon-kafka-exporter:0.1.0
+        args: ["--topic","reading.sensor.prt"]
         imagePullPolicy: Always
         envFrom:
         - secretRef:
