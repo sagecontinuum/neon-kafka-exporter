@@ -67,11 +67,11 @@ def send_data_from_topic(consumer,topic,date_start):
         logging.info('streaming data for topic: %s',topic)
         for msg in consumer:
             values = msg.value
-            values['readout_time'] = values['readout_time'].isoformat()
+            values['readout_time'] = values['readout_time'].timestamp()*10**9
             for key in list(values.keys()):
                 if isinstance(values[key],bytes):
                     del values[key]
-            plugin.publish("neon." + topic, values)
+            plugin.publish("neon." + topic, values,timestamp=values['readout_time'])
     logging.info('Done streaming data for topic: %s',topic)
 
 def main():
