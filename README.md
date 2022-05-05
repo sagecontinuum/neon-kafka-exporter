@@ -81,6 +81,86 @@ Files provided for the burn event:
 For each file, refer to the Algorithm Theoretical Basis Document ATBD for each variable on [NEONs Data portal](https://data.neonscience.org/data-products/explore) to convert the raw data to useable data. For example, `reading.sensor.windobserverii` corresponds to [2D Wind Speed and direction](https://data.neonscience.org/data-products/DP1.00001.001/RELEASE-2021) with the following [ATBD document](https://data.neonscience.org/api/v0/documents/NEON.DOC.000780vB)
 
 ## Neon Kafka Data Exporter - plugin
+
+### Plugin usage
+Two modes are currently supported for the plugin:
+- stream: plugin is streaming data for a topic with no end time
+- fixed-time: plugin is streaming data either for all the topics or a provided topic with start and end datetime.
+
+Full argument list:
+```
+--mode stream or fixed-time
+--topic TOPIC from the above list
+--startTime start time in isoformat with timezone UTC and defaults to the time it was executed
+--endTIme end time in isoformat with timezone UTC
+```
+Example for `--startTime` and `--endTime`:
+```
+2022-05-04T05:00:00+00:00
+2022-05-04T05:00
+2022-05-04
+```
+If the user does not provide a timezone aware `--startTime` or `--endTime`, it will default to UTC. If either one is not in UTC timezone it will be modify to UTC.
+
+Or generate one with this command with desired time:
+```
+import datetime
+print(datetime.datetime(2022,4,18,5,0,tzinfo=datetime.timezone.utc).isoformat())
+```
+
+For `--mode stream`, the user can pass in the following command line arguments:
+```
+--mode stream 
+--topic reading.sensor.mti300ahrs
+```
+Full usage (reference Docker section for building):
+```
+docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode stream --topic reading.sensor.mti300ahrs
+```
+There is also an option to do the streaming from a previous time and not just default to the time the plugin was executed.
+```
+--mode stream
+--topic reading.sensor.mti300ahrs
+--startTime 2022-05-04T05:00:00+00:00
+```
+Full usage (reference Docker section for building):
+```
+docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode stream --topic reading.sensor.mti300ahrs --startTime 2022-05-04T05:00:00+00:00
+```
+Example output:
+``
+....
+Streaming data for topic: reading.sensor.mti300ahrs, startTime: 2022-05-05 21:47:58.689231+00:00 - endTime: None
+```
+Now if the plugin is interrupted it will report the number of records that it wrote to SDR:
+```
+Done streaming data for topic: reading.sensor.mti300ahrs, wrote 4352 records
+```
+
+For `--mode fixed-time`, the user can pass in the following command line arguments:
+```
+--mode fixed-time
+--startTime 2022-05-04T05:00:00+00:00
+--endTime 2022-05-04T06:00:00+00:00
+```
+This will stream all the sensor topics from `--startTime` to `--endTime`.
+
+Full usage:
+```
+docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode fixed-time --startTime 2022-05-04T05:00:00+00:00 --endTime 2022-05-04T06:00:00+00:00
+```
+Possible output:
+```
+Streaming data for topic: reading.sensor.windobserverii, startTime: 2022-05-04 05:00:00+00:00 - endTime: 2022-05-04 06:00:00+00:00
+Done streaming data for topic: reading.sensor.windobserverii, wrote 3601 records
+Streaming data for topic: reading.sensor.pressuretransducer, startTime: 2022-05-04 05:00:00+00:00 - endTime: 2022-05-04 06:00:00+00:00
+....
+```
+For one topic:
+```
+docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode fixed-time --topic reading.sensor.mti300ahrs --startTime 2022-05-04T05:00:00+00:00 --endTime 2022-05-04T06:00:00+00:00
+```
+
 ### Docker
 Docker build:
 ```
@@ -88,7 +168,7 @@ docker build -t sagecontinuum/plugin-neon-kafka-exporter .
 ```
 Docker run:
 ```
-docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --topic reading.sensor.mti300ahrs
+docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode stream --topic reading.sensor.mti300ahrs
 ```
 ### Kubernetes
 Create secrets from .env:
