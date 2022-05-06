@@ -79,7 +79,7 @@ def send_data_from_topic(consumer,topic,startTime,endTime=None):
                 values = msg.value
                 values['readout_time'] = int(values['readout_time'].timestamp()*10**9)
                 for key in list(values.keys()):
-                    plugin.publish("neon." + topic + "."+ str(key), values[key],timestamp=values['readout_time'])
+                    plugin.publish("neon." + topic + "."+ str(key).lower(), values[key],timestamp=values['readout_time'])
                 count_msgs+= 1
         finally:
             logging.info('Done streaming data for topic: %s, wrote %s records',topic,str(count_msgs))
@@ -96,7 +96,7 @@ def subscribe_topic_stream(consumer,topics):
                 values = msg.value
                 values['readout_time'] = int(values['readout_time'].timestamp()*10**9)
                 for key in list(values.keys()):
-                    plugin.publish("neon." + current_topic + "."+ str(key), values[key],timestamp=values['readout_time'])
+                    plugin.publish("neon." + current_topic + "."+ str(key).lower(), values[key],timestamp=values['readout_time'])
                 count_msgs+= 1
         finally:
             logging.info('Done streaming data for topics: %s, wrote %s records',topics,str(count_msgs))
