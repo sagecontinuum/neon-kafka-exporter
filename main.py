@@ -83,6 +83,7 @@ def send_data_from_topic(consumer,topic,startTime,endTime=None):
                 count_msgs+= 1
         finally:
             logging.info('Done streaming data for topic: %s, wrote %s records',topic,str(count_msgs))
+            return
 
 def convert_input_time_to_datetime(time_input,time_type):
     try:
