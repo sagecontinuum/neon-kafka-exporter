@@ -84,14 +84,14 @@ For each file, refer to the Algorithm Theoretical Basis Document ATBD for each v
 
 ### Plugin usage
 Two modes are currently supported for the plugin:
-- stream: plugin is streaming data for a topic with no end time
+- subscribe: plugin is subscribing to a topic or multiple topics
 - fixed-time: plugin is streaming data either for all the topics or a provided topic with start and end datetime.
 
 Full argument list:
 ```
---mode stream or fixed-time
---topic TOPIC from the above list
---startTime start time in isoformat with timezone UTC and defaults to the time it was executed
+--mode subscribe or fixed-time
+--topics topic from the above list
+--startTime start time in isoformat with timezone UTC
 --endTIme end time in isoformat with timezone UTC
 ```
 Example for `--startTime` and `--endTime`:
@@ -108,33 +108,33 @@ import datetime
 print(datetime.datetime(2022,4,18,5,0,tzinfo=datetime.timezone.utc).isoformat())
 ```
 
-For `--mode stream`, the user can pass in the following command line arguments:
+For `--mode subscribe`, the user can pass in the following command line arguments:
 ```
---mode stream 
---topic reading.sensor.mti300ahrs
+--mode subscribe 
+--topics reading.sensor.mti300ahrs reading.sensor.prt
 ```
+`--topics` can be a list of topics or just one topic.
+
 Full usage (reference Docker section for building):
 ```
-docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode stream --topic reading.sensor.mti300ahrs
-```
-There is also an option to do the streaming from a previous time and not just default to the time the plugin was executed.
-```
---mode stream
---topic reading.sensor.mti300ahrs
---startTime 2022-05-04T05:00:00+00:00
-```
-Full usage (reference Docker section for building):
-```
-docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode stream --topic reading.sensor.mti300ahrs --startTime 2022-05-04T05:00:00+00:00
+docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode subscribe --topics reading.sensor.mti300ahrs reading.sensor.prt
 ```
 Example output:
 ``
-....
-Streaming data for topic: reading.sensor.mti300ahrs, startTime: 2022-05-05 21:47:58.689231+00:00 - endTime: None
+Updating subscribed topics to: ['reading.sensor.mti300ahrs', 'reading.sensor.prt']
+Subscribe to topic: ['reading.sensor.mti300ahrs', 'reading.sensor.prt']
+...
+Updated partition assignment: [TopicPartition(topic='reading.sensor.mti300ahrs', partition=0), TopicPartition(topic='reading.sensor.prt', partition=0)]
+Done streaming data for topics: ['reading.sensor.mti300ahrs', 'reading.sensor.prt'], wrote 2805 records
 ```
-Now if the plugin is interrupted it will report the number of records that it wrote to SDR:
+
+The user can also subscribe to all the `sensor topics` by not providing any topics:
 ```
-Done streaming data for topic: reading.sensor.mti300ahrs, wrote 4352 records
+--mode subscribe
+```
+Full usage (reference Docker section for building):
+```
+docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode subscribe
 ```
 
 For `--mode fixed-time`, the user can pass in the following command line arguments:
@@ -158,7 +158,7 @@ Streaming data for topic: reading.sensor.pressuretransducer, startTime: 2022-05-
 ```
 For one topic:
 ```
-docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode fixed-time --topic reading.sensor.mti300ahrs --startTime 2022-05-04T05:00:00+00:00 --endTime 2022-05-04T06:00:00+00:00
+docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode fixed-time --topics reading.sensor.mti300ahrs --startTime 2022-05-04T05:00:00+00:00 --endTime 2022-05-04T06:00:00+00:00
 ```
 
 ### Docker
@@ -168,7 +168,7 @@ docker build -t sagecontinuum/plugin-neon-kafka-exporter .
 ```
 Docker run:
 ```
-docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode stream --topic reading.sensor.mti300ahrs
+docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode subscribe --topics reading.sensor.mti300ahrs
 ```
 ### Kubernetes
 Create secrets from .env:

@@ -1,6 +1,6 @@
 name: "neon-kafka-exporter"
 description: "Neon Kafka Exporter."
-version: "0.4.0"
+version: "0.5.0"
 authors: "Ismael Perez <i3perez@sdsc.edu>"
 keywords: "kafka, neon, sensors"
 homepage: "https://github.com/sagecontinuum/neon-kafka-exporter"

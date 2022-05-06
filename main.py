@@ -85,12 +85,29 @@ def send_data_from_topic(consumer,topic,startTime,endTime=None):
             logging.info('Done streaming data for topic: %s, wrote %s records',topic,str(count_msgs))
     return
 
+def subscribe_topic_stream(consumer,topics):
+    consumer.subscribe(topics=topics)
+    with Plugin() as plugin:
+        logging.info('Subscribe to topic: %s',topics)
+        count_msgs = 0
+        try:
+            for msg in consumer:
+                current_topic = msg.topic
+                values = msg.value
+                values['readout_time'] = int(values['readout_time'].timestamp()*10**9)
+                for key in list(values.keys()):
+                    plugin.publish("neon." + current_topic + "."+ str(key), values[key],timestamp=values['readout_time'])
+                count_msgs+= 1
+        finally:
+            logging.info('Done streaming data for topics: %s, wrote %s records',topics,str(count_msgs))
+    return
+
 def convert_input_time_to_datetime(time_input,time_type):
     try:
         time_format = datetime.fromisoformat(time_input)
     except:
         logging.critical('Invalid time: ' + str(time_input) + ' for ' +str(time_type))
-        sys.ext()
+        sys.exit()
     return time_format
 
 def mod_tz(time):
@@ -105,9 +122,9 @@ def mod_tz(time):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode",choices=['fixed-time','stream'],help="Mode to run plugin. Options: fixed-time,stream")
-    parser.add_argument("--topic",help="Kafka topic to stream data from")
-    parser.add_argument("--startTime",default=datetime.now(pytz.utc).isoformat(), help="Start time in isoformat")
+    parser.add_argument("--mode",choices=['fixed-time','subscribe'],help="Mode to run plugin. Options: fixed-time,subscribe")
+    parser.add_argument("--topics",nargs="+",help="Kafka topic to stream data from")
+    parser.add_argument("--startTime", help="Start time in isoformat")
     parser.add_argument("--endTime",help="End time in isoformat")
     args = parser.parse_args()
     logging.basicConfig(
@@ -119,11 +136,15 @@ def main():
     consumer = init_kafka()
     all_topics = consumer.topics()
     sensor_topics = get_sensor_topics(all_topics)
-    topic = args.topic
+    topics = args.topics
 
     start_time_input = args.startTime
     end_time_input = args.endTime
-    startTime = convert_input_time_to_datetime(start_time_input,'--startTime')
+    if start_time_input is not None:
+        startTime = convert_input_time_to_datetime(start_time_input,'--startTime')
+    else:
+        startTime = None
+
     if end_time_input is not None:
         endTime = convert_input_time_to_datetime(end_time_input,'--endTime')
     else:
@@ -140,11 +161,10 @@ def main():
             if endTime <= startTime:
                 logging.critical('endTime is before startTime - no data available.')
                 sys.exit()
-            if topic is not None:
-                final_topics = [topic]
-            else:
-                final_topics = sensor_topics
-            for iTopic in final_topics:
+            if topics is None:
+                topics = sensor_topics
+
+            for iTopic in topics:
                 if not iTopic in sensor_topics:
                     logging.critical('Topic: ' + str(iTopic) + ' not available or not supported.')
                     continue
@@ -152,13 +172,19 @@ def main():
         else:
             logging.critical('Not supporting this configuration for %s',mode)
             sys.exit()
-    elif mode == 'stream': # mode == stream
-        #if mode == stream, topic must be provided, startTime can be used but endTime should not be provided
-        if startTime is not None and endTime is None:
-            if not topic in sensor_topics:
-                logging.critical('Topic: ' + str(topic) + ' not available or not supported.')
-                sys.exit()
-            send_data_from_topic(consumer,topic,startTime,endTime)
+    elif mode == 'subscribe':
+        #if mode == subscribe, topics optional, defaults to all sensor_topics, startTime and endTime should not be provided
+        if startTime is None and endTime is None:
+            if topics is None:
+                topics = sensor_topics
+
+            final_topics = []
+            for iTopic in topics:
+                if not iTopic in sensor_topics:
+                    logging.critical('Topic: ' + str(iTopic) + ' not available or not supported.')
+                else:
+                    final_topics.append(iTopic)
+            subscribe_topic_stream(consumer,final_topics)
         else:
             logging.critical('Not supporting this configuration for %s',mode)
             sys.exit()
