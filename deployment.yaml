@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: plugin-neon-kafka-exporter
-        image: registry.sagecontinuum.org/iperezx/neon-kafka-exporter:0.3.0
+        image: registry.sagecontinuum.org/iperezx/neon-kafka-exporter:0.4.0
         args: ["--mode", "stream","--topic","reading.sensor.prt"]
         imagePullPolicy: Always
         envFrom:
