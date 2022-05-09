@@ -26,7 +26,7 @@ KAFKA_PASSWORD=
 ```
 
 ## Neon Kafka Data Stream Topics
-Available topics from the Kafka stream with description to some topics:
+Available topics from the Kafka stream with description to some topics or see this image for more information about the sensors [link](https://www.neonscience.org/sites/default/files/styles/max_2600x2600/public/2021-04/2021_04_MDP-Measurements-Table-2021-Master.png?itok=UdCXLRmT):
 - 'reading.sensor.prt', - Singal aspirated air temperature
 - 'reading.sensor.mti300ahrs', - 3D wind attitude and motion reference
 - 'reading.sensor.li191r', - Photosynthetically active radiation (quantum line)
