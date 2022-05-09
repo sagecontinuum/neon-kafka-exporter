@@ -80,6 +80,8 @@ Files provided for the burn event:
 
 For each file, refer to the Algorithm Theoretical Basis Document ATBD for each variable on [NEONs Data portal](https://data.neonscience.org/data-products/explore) to convert the raw data to useable data. For example, `reading.sensor.windobserverii` corresponds to [2D Wind Speed and direction](https://data.neonscience.org/data-products/DP1.00001.001/RELEASE-2021) with the following [ATBD document](https://data.neonscience.org/api/v0/documents/NEON.DOC.000780vB)
 
+For more information about the NEON Nodes see [link](https://www.neonscience.org/resources/research-support/mobile-deployment-platforms)
+
 ## Neon Kafka Data Exporter - plugin
 
 ### Plugin usage
@@ -120,7 +122,7 @@ Full usage (reference Docker section for building):
 docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode subscribe --topics reading.sensor.mti300ahrs reading.sensor.prt
 ```
 Example output:
-``
+```
 Updating subscribed topics to: ['reading.sensor.mti300ahrs', 'reading.sensor.prt']
 Subscribe to topic: ['reading.sensor.mti300ahrs', 'reading.sensor.prt']
 ...
@@ -132,6 +134,7 @@ The user can also subscribe to all the `sensor topics` by not providing any topi
 ```
 --mode subscribe
 ```
+
 Full usage (reference Docker section for building):
 ```
 docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode subscribe
