@@ -26,7 +26,7 @@ KAFKA_PASSWORD=
 ```
 
 ## Neon Kafka Data Stream Topics
-Available topics from the Kafka stream with description to some topics or see this image for more information about the sensors [link](https://www.neonscience.org/sites/default/files/styles/max_2600x2600/public/2021-04/2021_04_MDP-Measurements-Table-2021-Master.png?itok=UdCXLRmT):
+Available topics from the Kafka stream with description to some topics:
 - 'reading.sensor.prt', - Singal aspirated air temperature
 - 'reading.sensor.mti300ahrs', - 3D wind attitude and motion reference
 - 'reading.sensor.li191r', - Photosynthetically active radiation (quantum line)
@@ -77,6 +77,8 @@ Files provided for the burn event:
 - 'reading.sensor.l2130i_raw', - Atmospheric H2O isotopes
 - 'reading.sensor.csat3', - 3D wind speed, direction and sonic temperature
 - 'reading.sensor.nr01', - Shortwave and longwave radiation (net radiometer)
+
+![NEON Sensors](https://www.neonscience.org/sites/default/files/styles/max_2600x2600/public/2021-04/2021_04_MDP-Measurements-Table-2021-Master.png?itok=UdCXLRmT)
 
 For each file, refer to the Algorithm Theoretical Basis Document ATBD for each variable on [NEONs Data portal](https://data.neonscience.org/data-products/explore) to convert the raw data to useable data. For example, `reading.sensor.windobserverii` corresponds to [2D Wind Speed and direction](https://data.neonscience.org/data-products/DP1.00001.001/RELEASE-2021) with the following [ATBD document](https://data.neonscience.org/api/v0/documents/NEON.DOC.000780vB)
 
