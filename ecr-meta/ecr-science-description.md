@@ -1,2 +1,2 @@
 # Neon Kafka Exporter
-[README](https://github.com/sagecontinuum/neon-kafka-exporter#neon-kafka-exporter)
+[README](https://github.com/sagecontinuum/neon-kafka-exporter/blob/main/README.md)
