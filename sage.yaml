@@ -5,7 +5,7 @@ authors: "Ismael Perez <i3perez@sdsc.edu>"
 keywords: "kafka, neon, sensors"
 homepage: "https://github.com/sagecontinuum/neon-kafka-exporter"
 funding: 'NSF 1935984'
-collaborators: 'Pete Beckman, Nicola Ferrier, Joseph Swantek, Neal Conrad, Raj Sankaran, Sean Shahkarami, Seongha Park, Wolfgang Gerlach, Yongho Kim'
+collaborators: 'Pete Beckman, Nicola Ferrier, Joseph Swantek, Neal Conrad, Raj Sankaran, Sean Shahkarami, Seongha Park, Yongho Kim'
 source:
   architectures:
     - "linux/amd64"
