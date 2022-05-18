@@ -224,4 +224,4 @@ Files sizes:
  31M: reading.sensor.windobserverii.pkl
 ```
 ## Exploratory Data Analysis of the data:
-After generating all the files for the burn event, the user can utilize the notebook [exploratory-data-analysis.ipynb](burn-event/exploratory-data-analysis.ipynb) to start using the data.
+After generating all the files for the burn event, the data is stored in [WIFIRE-Commons](https://wifire-data.sdsc.edu/dataset/neon-mdp-sage-wifire-bp3d-konza-prairie-burn-experiment) as `.pkl` files. The user can utilize the notebook [exploratory-data-analysis.ipynb](burn-event/post-processing/exploratory-data-analysis.ipynb) to start exploring the data.
