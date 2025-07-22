@@ -16,7 +16,7 @@ import pytz
 
 
 def init_kafka():
-    REGISTRY_URL = "https://schemaregistry.mdp5.eng.neoninternal.org/apis/ccompat/v6"
+    REGISTRY_URL = os.getenv('KAFKA_REGISTRY_URL')
     KAFKA_BROKER = os.getenv('KAFKA_BROKER')
     KAFKA_USERNAME = os.getenv('KAFKA_USERNAME')
     KAFKA_PASSWORD = os.getenv('KAFKA_PASSWORD')
