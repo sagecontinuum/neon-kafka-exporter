@@ -55,7 +55,13 @@ def get_sensor_topics(topics):
                     ]
     return sensor_topics
 
-def send_data_from_topic(consumer,topic,startTime,endTime=None):
+def publish_values(plugin, topic_prefix, values):
+    values['readout_time'] = int(values['readout_time'].timestamp()*10**9)
+    for key in list(values.keys()):
+        plugin.publish(f"neon.{topic_prefix}.{str(key).lower()}", values[key], timestamp=values['readout_time'])
+    return
+
+def send_data_from_topic(consumer, topic, interval, startTime, endTime=None):
     tp = TopicPartition(topic, 0)
     assigned_topic = [tp]
     consumer.assign(assigned_topic)
@@ -70,34 +76,47 @@ def send_data_from_topic(consumer,topic,startTime,endTime=None):
         return
     consumer.seek(tp, rec_in[tp].offset)
     with Plugin() as plugin:
-        logging.info('Streaming data for topic: %s, startTime: %s - endTime: %s',topic, startTime,endTime)
+        logging.info('Streaming data for topic: %s, startTime: %s - endTime: %s, interval: %s',topic, startTime,endTime, interval)
         count_msgs = 0
+        last_publish_time = 0
         try:
             for msg in consumer:
                 if rec_out is not None and msg.offset > rec_out[tp].offset:
                     break
-                values = msg.value
-                values['readout_time'] = int(values['readout_time'].timestamp()*10**9)
-                for key in list(values.keys()):
-                    plugin.publish("neon." + topic + "."+ str(key).lower(), values[key],timestamp=values['readout_time'])
-                count_msgs+= 1
+                now = time.time()
+                if interval > 0:
+                    if now - last_publish_time >= interval:
+                        publish_values(plugin, topic, msg.value)
+                        count_msgs += 1
+                        last_publish_time = now
+                else:
+                    publish_values(plugin, topic, msg.value)
+                    count_msgs += 1
         finally:
             logging.info('Done streaming data for topic: %s, wrote %s records',topic,str(count_msgs))
     return
 
-def subscribe_topic_stream(consumer,topics):
+def subscribe_topic_stream(consumer, topics, interval):
     consumer.subscribe(topics=topics)
     with Plugin() as plugin:
-        logging.info('Subscribe to topic: %s',topics)
+        logging.info('Subscribe to topic: %s, interval: %s',topics, interval)
         count_msgs = 0
+        last_publish_time = {topic: 0 for topic in topics}
         try:
             for msg in consumer:
                 current_topic = msg.topic
-                values = msg.value
-                values['readout_time'] = int(values['readout_time'].timestamp()*10**9)
-                for key in list(values.keys()):
-                    plugin.publish("neon." + current_topic + "."+ str(key).lower(), values[key],timestamp=values['readout_time'])
-                count_msgs+= 1
+                if current_topic not in topics:
+                    logging.warning(f"Received message for unexpected topic '{current_topic}'. Skipping publish.")
+                    continue
+                now = time.time()
+                if interval > 0:
+                    if now - last_publish_time[current_topic] >= interval:
+                        publish_values(plugin, current_topic, msg.value)
+                        count_msgs += 1
+                        last_publish_time[current_topic] = now
+                else:
+                    publish_values(plugin, current_topic, msg.value)
+                    count_msgs += 1
         finally:
             logging.info('Done streaming data for topics: %s, wrote %s records',topics,str(count_msgs))
     return
@@ -126,6 +145,8 @@ def main():
     parser.add_argument("--topics",nargs="+",help="Kafka topic to stream data from")
     parser.add_argument("--startTime", help="Start time in isoformat")
     parser.add_argument("--endTime",help="End time in isoformat")
+    parser.add_argument("--interval", type=int, default=60, help="Interval in seconds between data publishes")
+
     args = parser.parse_args()
     logging.basicConfig(
                         level=logging.INFO,
@@ -137,6 +158,7 @@ def main():
     all_topics = consumer.topics()
     sensor_topics = get_sensor_topics(all_topics)
     topics = args.topics
+    interval = args.interval
 
     start_time_input = args.startTime
     end_time_input = args.endTime
@@ -168,7 +190,7 @@ def main():
                 if not iTopic in sensor_topics:
                     logging.critical('Topic: ' + str(iTopic) + ' not available or not supported.')
                     continue
-                send_data_from_topic(consumer,iTopic,startTime,endTime)
+                send_data_from_topic(consumer, iTopic, interval, startTime, endTime)
         else:
             logging.critical('Not supporting this configuration for %s',mode)
             sys.exit()
@@ -184,7 +206,7 @@ def main():
                     logging.critical('Topic: ' + str(iTopic) + ' not available or not supported.')
                 else:
                     final_topics.append(iTopic)
-            subscribe_topic_stream(consumer,final_topics)
+            subscribe_topic_stream(consumer, final_topics, interval)
         else:
             logging.critical('Not supporting this configuration for %s',mode)
             sys.exit()
