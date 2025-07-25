@@ -2,7 +2,6 @@
 import argparse
 import logging
 import time
-import numpy as np
 from waggle.plugin import Plugin
 from kafka import KafkaConsumer,TopicPartition
 from schema_registry.client import SchemaRegistryClient
@@ -11,7 +10,6 @@ import os
 import sys
 from datetime import datetime
 from datetime import timezone
-import json
 import pytz
 
 
@@ -61,7 +59,7 @@ def publish_values(plugin, topic_prefix, values):
         plugin.publish(f"neon.{topic_prefix}.{str(key).lower()}", values[key], timestamp=values['readout_time'])
     return
 
-def send_data_from_topic(consumer, topic, interval, startTime, endTime=None):
+def send_data_from_topic(consumer, topic, delay, startTime, endTime=None):
     tp = TopicPartition(topic, 0)
     assigned_topic = [tp]
     consumer.assign(assigned_topic)
@@ -76,7 +74,7 @@ def send_data_from_topic(consumer, topic, interval, startTime, endTime=None):
         return
     consumer.seek(tp, rec_in[tp].offset)
     with Plugin() as plugin:
-        logging.info('Streaming data for topic: %s, startTime: %s - endTime: %s, interval: %s',topic, startTime,endTime, interval)
+        logging.info('Streaming data for topic: %s, startTime: %s - endTime: %s, delay: %s',topic, startTime,endTime, delay)
         count_msgs = 0
         last_publish_time = 0
         try:
@@ -84,8 +82,8 @@ def send_data_from_topic(consumer, topic, interval, startTime, endTime=None):
                 if rec_out is not None and msg.offset > rec_out[tp].offset:
                     break
                 now = time.time()
-                if interval > 0:
-                    if now - last_publish_time >= interval:
+                if delay > 0:
+                    if now - last_publish_time >= delay:
                         publish_values(plugin, topic, msg.value)
                         count_msgs += 1
                         last_publish_time = now
@@ -96,10 +94,10 @@ def send_data_from_topic(consumer, topic, interval, startTime, endTime=None):
             logging.info('Done streaming data for topic: %s, wrote %s records',topic,str(count_msgs))
     return
 
-def subscribe_topic_stream(consumer, topics, interval):
+def subscribe_topic_stream(consumer, topics, delay):
     consumer.subscribe(topics=topics)
     with Plugin() as plugin:
-        logging.info('Subscribe to topic: %s, interval: %s',topics, interval)
+        logging.info('Subscribe to topic: %s, delay: %s',topics, delay)
         count_msgs = 0
         last_publish_time = {topic: 0 for topic in topics}
         try:
@@ -109,8 +107,8 @@ def subscribe_topic_stream(consumer, topics, interval):
                     logging.warning(f"Received message for unexpected topic '{current_topic}'. Skipping publish.")
                     continue
                 now = time.time()
-                if interval > 0:
-                    if now - last_publish_time[current_topic] >= interval:
+                if delay > 0:
+                    if now - last_publish_time[current_topic] >= delay:
                         publish_values(plugin, current_topic, msg.value)
                         count_msgs += 1
                         last_publish_time[current_topic] = now
@@ -145,7 +143,7 @@ def main():
     parser.add_argument("--topics",nargs="+",help="Kafka topic to stream data from")
     parser.add_argument("--startTime", help="Start time in isoformat")
     parser.add_argument("--endTime",help="End time in isoformat")
-    parser.add_argument("--interval", type=int, default=60, help="Interval in seconds between data publishes")
+    parser.add_argument("--delay", type=int, default=60, help="Delay in seconds between data publishes")
 
     args = parser.parse_args()
     logging.basicConfig(
@@ -158,7 +156,7 @@ def main():
     all_topics = consumer.topics()
     sensor_topics = get_sensor_topics(all_topics)
     topics = args.topics
-    interval = args.interval
+    delay = args.delay
 
     start_time_input = args.startTime
     end_time_input = args.endTime
@@ -190,7 +188,7 @@ def main():
                 if not iTopic in sensor_topics:
                     logging.critical('Topic: ' + str(iTopic) + ' not available or not supported.')
                     continue
-                send_data_from_topic(consumer, iTopic, interval, startTime, endTime)
+                send_data_from_topic(consumer, iTopic, delay, startTime, endTime)
         else:
             logging.critical('Not supporting this configuration for %s',mode)
             sys.exit()
@@ -206,7 +204,7 @@ def main():
                     logging.critical('Topic: ' + str(iTopic) + ' not available or not supported.')
                 else:
                     final_topics.append(iTopic)
-            subscribe_topic_stream(consumer, final_topics, interval)
+            subscribe_topic_stream(consumer, final_topics, delay)
         else:
             logging.critical('Not supporting this configuration for %s',mode)
             sys.exit()
