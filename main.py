@@ -57,7 +57,9 @@ def publish_values(plugin, topic_prefix, values, exclude_vars):
     values['readout_time'] = int(values['readout_time'].timestamp()*10**9)
     for key in list(values.keys()):
         if key not in exclude_vars:
-            plugin.publish(f"neon.{topic_prefix}.{str(key).lower()}", values[key], timestamp=values['readout_time'])
+            if isinstance(values[key], (int, float, str)):
+                #safeguard for pywaggle publishing (same as their own check)
+                plugin.publish(f"neon.{topic_prefix}.{str(key).lower()}", values[key], timestamp=values['readout_time'])
     return
 
 def send_data_from_topic(consumer, topic, delay, exclude_vars, startTime, endTime=None):
