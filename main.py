@@ -53,13 +53,14 @@ def get_sensor_topics(topics):
                     ]
     return sensor_topics
 
-def publish_values(plugin, topic_prefix, values):
+def publish_values(plugin, topic_prefix, values, exclude_vars):
     values['readout_time'] = int(values['readout_time'].timestamp()*10**9)
     for key in list(values.keys()):
-        plugin.publish(f"neon.{topic_prefix}.{str(key).lower()}", values[key], timestamp=values['readout_time'])
+        if key not in exclude_vars:
+            plugin.publish(f"neon.{topic_prefix}.{str(key).lower()}", values[key], timestamp=values['readout_time'])
     return
 
-def send_data_from_topic(consumer, topic, delay, startTime, endTime=None):
+def send_data_from_topic(consumer, topic, delay, exclude_vars, startTime, endTime=None):
     tp = TopicPartition(topic, 0)
     assigned_topic = [tp]
     consumer.assign(assigned_topic)
@@ -84,7 +85,7 @@ def send_data_from_topic(consumer, topic, delay, startTime, endTime=None):
                 now = time.time()
                 if delay > 0:
                     if now - last_publish_time >= delay:
-                        publish_values(plugin, topic, msg.value)
+                        publish_values(plugin, topic, msg.value, exclude_vars)
                         count_msgs += 1
                         last_publish_time = now
                 else:
@@ -94,7 +95,7 @@ def send_data_from_topic(consumer, topic, delay, startTime, endTime=None):
             logging.info('Done streaming data for topic: %s, wrote %s records',topic,str(count_msgs))
     return
 
-def subscribe_topic_stream(consumer, topics, delay):
+def subscribe_topic_stream(consumer, topics, delay, exclude_vars):
     consumer.subscribe(topics=topics)
     with Plugin() as plugin:
         logging.info('Subscribe to topic: %s, delay: %s',topics, delay)
@@ -109,7 +110,7 @@ def subscribe_topic_stream(consumer, topics, delay):
                 now = time.time()
                 if delay > 0:
                     if now - last_publish_time[current_topic] >= delay:
-                        publish_values(plugin, current_topic, msg.value)
+                        publish_values(plugin, current_topic, msg.value, exclude_vars)
                         count_msgs += 1
                         last_publish_time[current_topic] = now
                 else:
@@ -144,6 +145,7 @@ def main():
     parser.add_argument("--startTime", help="Start time in isoformat")
     parser.add_argument("--endTime",help="End time in isoformat")
     parser.add_argument("--delay", type=int, default=60, help="Delay in seconds between data publishes")
+    parser.add_argument("--excludeVars",nargs="+",default=['readout_time','site_id'],help="Exclude variables in a sensor topic")
 
     args = parser.parse_args()
     logging.basicConfig(
@@ -157,6 +159,7 @@ def main():
     sensor_topics = get_sensor_topics(all_topics)
     topics = args.topics
     delay = args.delay
+    exclude_vars = args.excludeVars
 
     start_time_input = args.startTime
     end_time_input = args.endTime
@@ -188,7 +191,7 @@ def main():
                 if not iTopic in sensor_topics:
                     logging.critical('Topic: ' + str(iTopic) + ' not available or not supported.')
                     continue
-                send_data_from_topic(consumer, iTopic, delay, startTime, endTime)
+                send_data_from_topic(consumer, iTopic, delay, exclude_vars, startTime, endTime)
         else:
             logging.critical('Not supporting this configuration for %s',mode)
             sys.exit()
@@ -204,7 +207,7 @@ def main():
                     logging.critical('Topic: ' + str(iTopic) + ' not available or not supported.')
                 else:
                     final_topics.append(iTopic)
-            subscribe_topic_stream(consumer, final_topics, delay)
+            subscribe_topic_stream(consumer, final_topics, delay, exclude_vars)
         else:
             logging.critical('Not supporting this configuration for %s',mode)
             sys.exit()
