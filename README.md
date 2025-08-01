@@ -20,6 +20,7 @@ Create an .env file with Kafka credentials. Note that `.gitignore` excludes the 
 
 .env format:
 ```
+KAFKA_REGISTRY_URL=
 KAFKA_BROKER=
 KAFKA_USERNAME=
 KAFKA_PASSWORD=
@@ -40,7 +41,8 @@ Full argument list:
 --mode subscribe or fixed-time
 --topics topic from the above list
 --startTime start time in isoformat with timezone UTC
---endTIme end time in isoformat with timezone UTC
+--endTime end time in isoformat with timezone UTC
+--dealy delay in seconds for publishing a message
 ```
 Example for `--startTime` and `--endTime`:
 ```
@@ -60,12 +62,13 @@ For `--mode subscribe`, the user can pass in the following command line argument
 ```
 --mode subscribe 
 --topics reading.sensor.mti300ahrs reading.sensor.prt
+--delay 30
 ```
 `--topics` can be a list of topics or just one topic.
 
 Full usage (reference Docker section for building):
 ```
-docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode subscribe --topics reading.sensor.mti300ahrs reading.sensor.prt
+docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode subscribe --topics reading.sensor.mti300ahrs reading.sensor.prt --delay 30
 ```
 Example output:
 ```
@@ -91,12 +94,14 @@ For `--mode fixed-time`, the user can pass in the following command line argumen
 --mode fixed-time
 --startTime 2022-05-04T05:00:00+00:00
 --endTime 2022-05-04T06:00:00+00:00
+--delay 30
 ```
-This will stream all the sensor topics from `--startTime` to `--endTime`.
+This will stream all the sensor topics from `--startTime` to `--endTime` and with a delay of 30 seconds.
 
 Full usage:
 ```
 docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode fixed-time --startTime 2022-05-04T05:00:00+00:00 --endTime 2022-05-04T06:00:00+00:00
+--delay 30
 ```
 Possible output:
 ```
@@ -107,7 +112,7 @@ Streaming data for topic: reading.sensor.pressuretransducer, startTime: 2022-05-
 ```
 For one topic:
 ```
-docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode fixed-time --topics reading.sensor.mti300ahrs --startTime 2022-05-04T05:00:00+00:00 --endTime 2022-05-04T06:00:00+00:00
+docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode fixed-time --topics reading.sensor.mti300ahrs --startTime 2022-05-04T05:00:00+00:00 --endTime 2022-05-04T06:00:00+00:00 --delay 30
 ```
 
 ### Docker
@@ -117,7 +122,7 @@ docker build -t sagecontinuum/plugin-neon-kafka-exporter .
 ```
 Docker run:
 ```
-docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode subscribe --topics reading.sensor.mti300ahrs
+docker run --env-file=.env -it --rm sagecontinuum/plugin-neon-kafka-exporter --mode subscribe --topics reading.sensor.mti300ahrs --delay 30
 ```
 ### Kubernetes
 Create secrets from .env:
@@ -127,6 +132,31 @@ kubectl create secret generic neon-env --from-env-file=.env
 Deploy app:
 ```
 kubectl create -f deployment.yaml
+```
+
+### Pluginctl
+Reference Sage Docs for setting up and installing [pluginctl](https://sagecontinuum.org/docs/reference-guides/pluginctl)
+Run:
+```
+pluginctl deploy --name neon-kafka-exporter registry.sagecontinuum.org/iperezx/neon-kafka-exporter:latest --env-from .env -- --mode subscribe --topics reading.sensor.hmp155 --delay 30
+```
+
+Delete plugin:
+```
+sudo pluginctl rm neon-kafka-exporter
+```
+
+Debug mode (override the entrypoint to sleep):
+```
+pluginctl deploy --name neon-kafka-exporter registry.sagecontinuum.org/iperezx/neon-kafka-exporter:latest --env-from .env  --entrypoint sleep infinity
+```
+Attach to pod:
+```
+kubectl exec -it neon-kafka-exporter bash
+```
+Run plugin:
+```
+python3 main.py --mode subscribe --topics reading.sensor.hmp155 --delay 30
 ```
 
 ## Neon Kafka Data exporter for the burn event

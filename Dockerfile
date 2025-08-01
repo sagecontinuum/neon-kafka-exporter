@@ -2,6 +2,12 @@
 # your code, the base image and any additional dependencies you need.
 FROM waggle/plugin-base:1.1.1-base
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    jq \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Now we include the Python requirements.txt file and install any missing dependencies.
